@@ -285,3 +285,91 @@ class Tensor:
 
     # Functions
     # TODO: Implement for Task 2.3.
+
+    def zero_grad(self) -> None:
+        self.grad = None
+
+    def __radd__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self._ensure_tensor(b), self)
+    
+    def __rmul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self._ensure_tensor(b), self)
+    
+    def __rsub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self._ensure_tensor(b), Neg.apply(self))
+
+    def __add__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def __mul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self, self._ensure_tensor(b))
+
+    def __sub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+    
+    def __neg__(self) -> Tensor:
+        return Neg.apply(self)
+    
+    def all(self) -> Tensor:
+        return All.apply(self)
+    
+    def add(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def sub(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+
+    def mul(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self, self._ensure_tensor(b))
+    
+    def __lt__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self, self._ensure_tensor(b))
+    
+    def __eq__(self, b: TensorLike) -> Tensor:
+        return EQ.apply(self, self._ensure_tensor(b))
+
+    def __gt__(self, b: TensorLike) -> Tensor:
+        return LT.apply(self._ensure_tensor(b), self)
+
+    def neg(self) -> Tensor:
+        return Neg.apply(self)
+    
+    def log(self) -> Tensor:
+        return Log.apply(self)
+    
+    def exp(self) -> Tensor:
+        return Exp.apply(self)
+    
+    def sigmoid(self) -> Tensor:
+        return Sigmoid.apply(self)
+    
+    def relu(self) -> Tensor:
+        return ReLU.apply(self)
+    
+    def is_close(self, b: TensorLike) -> Tensor:
+        return IsClose.apply(self, self._ensure_tensor(b))
+    
+    def sum(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        if dim is None:
+            # Sum over all dimensions
+            return Sum.apply(self, self._ensure_tensor(-1))
+        elif isinstance(dim, int):
+            return Sum.apply(self, self._ensure_tensor(dim))
+        else:
+            return Sum.apply(self, dim)
+    
+    def permute(self, dims: UserShape) -> Tensor:
+        return Permute.apply(self, dims)
+    
+    def view(self, shape: UserShape) -> Tensor:
+        return View.apply(self, shape)
+
+    def mean(self, dim: TensorLike) -> Tensor:
+        return Sum.apply(self, self._ensure_tensor(dim)) / self.size
+    
+    @property
+    def size(self) -> int:
+        return operators.prod(self.shape)
+        
+    
+
