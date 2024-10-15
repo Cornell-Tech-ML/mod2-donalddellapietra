@@ -47,7 +47,19 @@ def test_sum() -> None:
     print(a.sum(dim=1))
     print(a.sum(dim=None))
 
+    t = minitorch.tensor([[2, 3], [4, 6], [5, 7]])
+    print(t.all(0))
+
+
+def test_view() -> None:
+    a = minitorch.tensor([1.0, 2.0, 3.0, 4.0, 5.0, 6.0])
+    # print(a.shape)
+    # a = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+    print(a.shape)
+    print(a.view((2, 3)))
+
 
 if __name__ == "__main__":
     # test_manual()
-    test_sum()
+    # test_sum()
+    test_view()

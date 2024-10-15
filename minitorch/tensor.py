@@ -286,7 +286,8 @@ class Tensor:
     # Functions
     # TODO: Implement for Task 2.3.
 
-    def zero_grad(self) -> None:
+    def zero_grad_(self) -> None:
+        """Zero out the gradient of the tensor"""
         self.grad = None
 
     def __radd__(self, b: TensorLike) -> Tensor:
@@ -310,8 +311,10 @@ class Tensor:
     def __neg__(self) -> Tensor:
         return Neg.apply(self)
     
-    def all(self) -> Tensor:
-        return All.apply(self)
+    def all(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        if dim is None:
+            return All.apply(self, self._ensure_tensor(-1))
+        return All.apply(self, self._ensure_tensor(dim))
     
     def add(self, b: TensorLike) -> Tensor:
         return Add.apply(self, self._ensure_tensor(b))
@@ -362,14 +365,19 @@ class Tensor:
         return Permute.apply(self, dims)
     
     def view(self, shape: UserShape) -> Tensor:
-        return View.apply(self, shape)
+        shape_tensor = Tensor(TensorData([float(dim) for dim in shape], (len(shape),)), backend=self.backend)
+        return View.apply(self, shape_tensor)
+        # return View.apply(self, self.make(shape, (len(shape),), backend=self.backend))
 
     def mean(self, dim: TensorLike) -> Tensor:
         return Sum.apply(self, self._ensure_tensor(dim)) / self.size
     
     @property
     def size(self) -> int:
-        return operators.prod(self.shape)
+        return int(operators.prod(self.shape))
+
+    def __hash__(self) -> int:
+        return self.unique_id
         
     
 

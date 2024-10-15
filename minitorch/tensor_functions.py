@@ -98,12 +98,12 @@ class Add(Function):
 class All(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
-        """Return 1 if all are true"""
-        if dim is not None:
+        """Multiplies items along a dimension, or all items if dim is None"""
+        if dim.item() != -1:
             return a.f.mul_reduce(a, int(dim.item()))
         else:
-            print(a.shape)
-            return a.f.mul_reduce(a.contiguous().view(int(operators.prod(a.shape))), 0)
+            # print("all with dim -1")
+            return a.f.mul_reduce(a.contiguous().view([int(operators.prod(a.shape))]), 0)
 
 
 class EQ(Function):
@@ -146,18 +146,15 @@ class Mul(Function):
 class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
-        ctx.save_for_backward(a)
-        # if dim.item() == -1:
-        #     print(a.shape)
-        #     print(a.contiguous().view(int(operators.prod(a.shape))))
-        # if dim.item() == -1:
-        #     return a.f.add_reduce(a.contiguous().view(int(operators.prod(a.shape))), 0)
+        ctx.save_for_backward(a, dim)
+        if dim.item() == -1:
+            return a.f.add_reduce(a.contiguous().view([operators.prod(a.shape)]), 0)
         return a.f.add_reduce(a, int(dim.item()))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        original_shape = ctx.saved_values
-        return grad_output.expand(original_shape), 0.0
+        original_shape, dim = ctx.saved_values
+        return grad_output.expand(original_shape), minitorch.zeros(dim.shape, backend=grad_output.backend)
 
 
 class Sigmoid(Function):
