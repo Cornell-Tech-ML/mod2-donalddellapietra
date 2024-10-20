@@ -149,60 +149,12 @@ class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         return a.f.add_reduce(a, int(dim.item()))
-        # ctx.save_for_backward(a, dim)
-        # if dim.item() == -1:
-        #     return a.f.add_reduce(a.contiguous().view([operators.prod(a.shape)]), 0)
-        # return a.f.add_reduce(a, int(dim.item()))
+
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         return (grad_output, 0.0)
-        # original_shape, dim = ctx.saved_values
-        
-        # grad_input = minitorch.zeros(original_shape.shape, backend=grad_output.backend) + 1.0        
-        # # Return a zero tensor for the gradient with respect to dim
-        # grad_dim = minitorch.zeros(dim.shape, backend=grad_output.backend)
-        
-        # return grad_input, grad_dim
 
-        ### ChatGPT Answer
-        # original_shape, dim = ctx.saved_values
-        # dim_val = int(dim.item())
-
-        # if dim_val == -1:
-        #     # If dim was -1, we summed over all dimensions
-        #     grad_input = grad_output.expand(original_shape)
-        # else:
-        #     # Otherwise, we expand grad_output to match the original shape
-        #     expand_shape = list(original_shape)
-        #     expand_shape[dim_val] = 1
-        #     grad_input = grad_output.expand(expand_shape).expand(original_shape)
-
-        # # Return zero gradient for the dim argument
-        # return grad_input, 0.0
-
-
-
-
-# class Mean(Function):
-#     @staticmethod
-#     def forward(ctx: Context, a: Tensor, dim: int) -> Tensor:
-#         ctx.save_for_backward(a, dim)
-#         if dim == -1:
-#             return a.sum() / a.size
-#         else:
-#             return a.sum(dim=dim) / a.shape[dim]
-
-#     @staticmethod
-#     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
-#         a, dim = ctx.saved_values
-#         if dim == -1:
-#             scale = 1.0 / operators.prod(a.shape)
-#             grad_input = grad_output.expand(zeros(a.shape, backend=a.backend)) * scale
-#         else:
-#             scale = 1.0 / a.shape[dim]
-#             grad_input = grad_output.expand(zeros(a.shape, backend=a.backend)) * scale
-#         return grad_input
 
 
 class Sigmoid(Function):
@@ -217,10 +169,7 @@ class Sigmoid(Function):
         """Compute the sigmoid of a tensor"""
         (a,) = ctx.saved_values
         return grad_output.f.sigmoid_back_zip(a, grad_output)
-        # (a,) = ctx.saved_values
-        # sigmoid_a = a.f.sigmoid_map(a)  # Compute the sigmoid of the input
-        # sigmoid_derivative = sigmoid_a * (1 - sigmoid_a)  # Compute the derivative
-        # return (grad_output * sigmoid_derivative,)  # Return the gradient
+
 
 class ReLU(Function):
     @staticmethod
