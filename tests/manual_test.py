@@ -144,12 +144,104 @@ def test_permute():
     print("\nGradient after permute and sum:")
     print(d.grad)
 
+def test_nir():
+    d = minitorch.tensor([
+        [[1, 2, 3, 4], [5, 6, 7, 8]],
+        [[9, 10, 11, 12], [13, 14, 15, 16]],
+        [[17, 18, 19, 20], [21, 22, 23, 24]]
+    ], requires_grad=True)
+    print(d.shape)
+    print(d.view(((3 * 2 * 4))))
+    print(d.sum(1).shape)
+    print(d.shape)
+
+
+import torch
+
+def test_matmul():
+    
+    # array_1 = [[[1], [2]],
+    #     [[3], [4]],
+    #     [[5], [6]],
+    #     [[7], [8]]
+    # ]
+    # array_2 = [
+    #     [[1, 2, 3],
+    #     [4, 5, 6]]
+    # ]
+
+
+        
+    array_1 = [[[1], [2]],
+        [[3], [4]],
+        [[5], [6]],
+        [[7], [8]]
+    ]
+    array_2 = [
+        [[1, 2, 3],
+        [4, 5, 6]]
+    ]
+
+    # Create a tensor of shape 4 x 2 x 1
+    tensor_1 = torch.tensor(array_1)
+    tensor_1 = tensor_1.view(4, 2)
+
+    # Create a tensor of shape 1 x 2 x 3
+    tensor_2 = torch.tensor(array_2)
+    tensor_2 = tensor_2.view(2, 3)
+
+    print(tensor_1.shape)
+    print(tensor_2.shape)
+
+    print(tensor_1 @ tensor_2)
+
+    tensor1 = minitorch.tensor(array_1)
+    tensor2 = minitorch.tensor(array_2)
+    
+    c = (tensor1 * tensor2).sum(1)
+    # print(c)
+
+
+    tensor1 = minitorch.tensor([
+    [1, 2],
+    [3, 4],
+    [5, 6],
+    [7, 8]
+    ])
+
+    # Create a 2x3 tensor
+    tensor2 = minitorch.tensor([
+        [1, 2, 3],
+        [4, 5, 6]
+    ])
+
+    print(tensor1.shape)
+    print(tensor2.shape)
+
+    a = tensor1.view((tensor1.shape[0], tensor1.shape[1],1))
+    b = tensor2.view((1, tensor2.shape[0], tensor2.shape[1]))
+
+    c = (a * b).sum(1).view((4, 3))
+
+    print(c)
+
+def test_expand():
+    tensor2 = minitorch.tensor([
+        [1, 2, 3],
+        [4, 5, 6]
+    ])
+    print(tensor2.shape)
+    print(tensor2.expand((2, 3, 6)))
+
 
 if __name__ == "__main__":
-    test_permute()
+    test_expand()
+    pass
+
+    # test_matmul()
+    # test_permute()
     # test_mean()
     # test_manual()
     # test_sum()
     # test_neg_backward()
     # test_add_backward()
-    # test_view()

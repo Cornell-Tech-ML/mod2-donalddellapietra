@@ -352,12 +352,17 @@ class Tensor:
     
     def sum(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
         if dim is None:
-            # Sum over all dimensions
-            return Sum.apply(self, self._ensure_tensor(-1))
-        elif isinstance(dim, int):
-            return Sum.apply(self, self._ensure_tensor(dim))
+            return Sum.apply(self.contiguous().view(int(operators.prod(self.shape))), self._ensure_tensor(0))
         else:
-            return Sum.apply(self, dim)
+            return Sum.apply(self, self._ensure_tensor(dim))
+
+        # if dim is None:
+        #     # Sum over all dimensions
+        #     return Sum.apply(self, self._ensure_tensor(-1))
+        # elif isinstance(dim, int):
+        #     return Sum.apply(self, self._ensure_tensor(dim))
+        # else:
+        #     return Sum.apply(self, dim)
     
 
 
@@ -368,15 +373,38 @@ class Tensor:
 
     def permute(self, *dims: int) -> Tensor:
         # Convert the unpacked dims to a Tensor
-        if len(dims) == 0:
-            print("HELLLLLLLLLL")
         dims_tensor = Tensor(TensorData([float(dim) for dim in dims], (len(dims),)), backend=self.backend)
         return Permute.apply(self, dims_tensor)
     
-    def view(self, shape: UserShape) -> Tensor:
-        shape_tensor = Tensor(TensorData([float(dim) for dim in shape], (len(shape),)), backend=self.backend)
-        return View.apply(self, shape_tensor)
-        # return View.apply(self, self.make(shape, (len(shape),), backend=self.backend))
+
+
+    #can also unpack a tuple to do this
+    # def view(self, shape: Union[int, UserShape]) -> Tensor:
+    #     # Convert an integer shape to a tuple
+    #     if isinstance(shape, int):
+    #         shape = (shape,)
+        
+    #     shape_tensor = Tensor(
+    #         TensorData([float(dim) for dim in shape], (len(shape),)),
+    #         backend=self.backend
+    #     )
+    #     return View.apply(self, shape_tensor)
+
+
+        # can also unpack a tuple to do this
+    def view(self, *newdim: int) -> Tensor:
+        # if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
+        #     shape = shape[0]
+        # shape_tensor = tensor(list(shape), backend=self.backend)
+        # return View.apply(self, shape_tensor)
+
+        return View.apply(self, tensor(list(newdim)))
+    
+
+    # def view(self, shape: UserShape) -> Tensor:
+    #     shape_tensor = Tensor(TensorData([float(dim) for dim in shape], (len(shape),)), backend=self.backend)
+    #     return View.apply(self, shape_tensor)
+    #     return View.apply(self, self.make(shape, (len(shape),), backend=self.backend))
 
 
     # def mean(self, dim: TensorLike) -> Tensor:

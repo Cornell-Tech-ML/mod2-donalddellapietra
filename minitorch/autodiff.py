@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Iterable, Tuple, Protocol
+from typing import Any, Iterable, List, Tuple, Protocol
 
-
-# ## Task 1.1
+## Task 1.1
 # Central Difference calculation
-
 
 def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) -> Any:
     r"""Computes an approximation to the derivative of `f` with respect to one arg.
@@ -14,115 +12,102 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     See :doc:`derivative` or https://en.wikipedia.org/wiki/Finite_difference for more details.
 
     Args:
-    ----
-        f : arbitrary function from n-scalar args to one value
-        *vals : n-float values $x_0 \ldots x_{n-1}$
-        arg : the number $i$ of the arg to compute the derivative
-        epsilon : a small constant
+    -----
+    f: arbitrary function from n-scalar args to one value
+    *vals: n-float values $x_0 \ldots x_{n-1}$
+    arg : the number $i$ of the arg to compute the derivative
+    epsilon : a small constant
 
     Returns:
     -------
-        An approximation of $f'_i(x_0, \ldots, x_{n-1})$
-
+    An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
-    # Create a list to hold the values
-    vals_list = list(vals)
-
-    # Calculate f(x + epsilon)
-    vals_list[arg] += epsilon
-    f_plus = f(*vals_list)
-
-    # Calculate f(x - epsilon)
-    vals_list[arg] -= 2 * epsilon
-    f_minus = f(*vals_list)
-
-    # Compute the central difference
-    return (f_plus - f_minus) / (2 * epsilon)
-
+    # ASSIGN1.1
+    vals1 = [v for v in vals]
+    vals2 = [v for v in vals]
+    vals1[arg] = vals1[arg] + epsilon
+    vals2[arg] = vals2[arg] - epsilon
+    delta = f(*vals1) - f(*vals2)
+    return delta / (2 * epsilon)
+    # END ASSIGN1.1
 
 variable_count = 1
 
-
 class Variable(Protocol):
-    def accumulate_derivative(self, x: Any) -> None: ...  # noqa: D102
+    def accumulate_derivative(self, x: Any) -> None: ...
 
     @property
-    def unique_id(self) -> int: ...  # noqa: D102
+    def unique_id(self) -> int: ...
 
-    def is_leaf(self) -> bool: ...  # noqa: D102
+    def is_leaf(self) -> bool: ...
 
-    def is_constant(self) -> bool: ...  # noqa: D102
+    def is_constant(self) -> bool: ...
 
     @property
-    def parents(self) -> Iterable["Variable"]: ...  # noqa: D102
+    def parents(self) -> Iterable["Variable"]: ...
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: ...  # noqa: D102
-
+    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: ...
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
     """Computes the topological order of the computation graph.
 
     Args:
-    ----
-        variable: The right-most variable
+    -----
+    variable: The right-most variable
 
     Returns:
     -------
-        Non-constant Variables in topological order starting from the right.
-
+    Non-constant Variables in topological order starting from the right.
     """
-    visited = set()
-    sorted_variables = []
+    # ASSIGN1.4
+    order: List[Variable] = []
+    seen = set()
 
-    def dfs(v: Variable) -> None:
-        if v.is_constant():
+    def visit(var: Variable) -> None:
+        if var.unique_id in seen or var.is_constant():
             return
-        if v.unique_id in visited:
-            return
-        visited.add(v.unique_id)
-        for parent in v.parents:
-            dfs(parent)
-        sorted_variables.append(v)
+        if not var.is_leaf():
+            for m in var.parents:
+                if not m.is_constant():
+                    visit(m)
+        seen.add(var.unique_id)
+        order.insert(0, var)
 
-    dfs(variable)
-    return reversed(sorted_variables)
+    visit(variable)
+    return order
+    # END ASSIGN1.4
 
-
-def backpropagate(variable: Variable, deriv: Any) -> None:  # noqa: D417
+def backpropagate(variable: Variable, deriv: Any) -> None:
     """Runs backpropagation on the computation graph in order to
     compute derivatives for the leave nodes.
 
     Args:
-    ----
-        variable: The right-most variable
-        deriv  : Its derivative that we want to propagate backward to the leaves.
+    -----
+    variable: The right-most variable
+    deriv  : Its derivative that we want to propagate backward to the leaves.
 
-    No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
-
+    No return. Should write to its results to the derivative values of each leaf through
+    `accumulate_derivative`.
     """
-    # Implement backpropagation
-    sorted_variables = list(topological_sort(variable))
-
-    # Initialize gradients
-    gradients = {variable: deriv}
-
-    # Iterate through variables in topological order
-    for var in sorted_variables:
+    # ASSIGN1.4
+    queue = topological_sort(variable)
+    derivatives = {}
+    derivatives[variable.unique_id] = deriv
+    for var in queue:
+        deriv = derivatives[var.unique_id]
         if var.is_leaf():
-            var.accumulate_derivative(gradients[var])
+            var.accumulate_derivative(deriv)
         else:
-            # Compute gradients for parent variables
-            for parent, grad in var.chain_rule(gradients[var]):
-                if parent not in gradients:
-                    gradients[parent] = grad
-                else:
-                    gradients[parent] += grad
-
+            for v, d in var.chain_rule(deriv):
+                if v.is_constant():
+                    continue
+                derivatives.setdefault(v.unique_id, 0.0)
+                derivatives[v.unique_id] = derivatives[v.unique_id] + d
+    # END ASSIGN1.4
 
 @dataclass
 class Context:
     """Context class is used by `Function` to store information during the forward pass."""
-
     no_grad: bool = False
     saved_values: Tuple[Any, ...] = ()
 
@@ -134,5 +119,4 @@ class Context:
 
     @property
     def saved_tensors(self) -> Tuple[Any, ...]:
-        """Returns the saved tensors"""
         return self.saved_values

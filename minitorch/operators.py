@@ -62,9 +62,11 @@ def relu(x: float) -> float:
     return x if x > 0 else 0
 
 
+EPS = 1e-6
+
 def log(x: float) -> float:
     """Compute the logarithm of a number."""
-    return math.log(x)
+    return math.log(x + EPS)
 
 
 def exp(x: float) -> float:
@@ -74,7 +76,7 @@ def exp(x: float) -> float:
 
 def log_back(x: float, d: float) -> float:
     """Compute the derivative of the logarithm of a number, times a second number."""
-    return d / x
+    return d / (x + EPS)
 
 
 def inv(x: float) -> float:

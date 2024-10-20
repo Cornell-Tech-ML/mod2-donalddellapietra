@@ -148,20 +148,40 @@ class Mul(Function):
 class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
-        ctx.save_for_backward(a, dim)
-        if dim.item() == -1:
-            return a.f.add_reduce(a.contiguous().view([operators.prod(a.shape)]), 0)
         return a.f.add_reduce(a, int(dim.item()))
+        # ctx.save_for_backward(a, dim)
+        # if dim.item() == -1:
+        #     return a.f.add_reduce(a.contiguous().view([operators.prod(a.shape)]), 0)
+        # return a.f.add_reduce(a, int(dim.item()))
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        original_shape, dim = ctx.saved_values
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+        return (grad_output, 0.0)
+        # original_shape, dim = ctx.saved_values
         
-        grad_input = minitorch.zeros(original_shape.shape, backend=grad_output.backend) + 1.0        
-        # Return a zero tensor for the gradient with respect to dim
-        grad_dim = minitorch.zeros(dim.shape, backend=grad_output.backend)
+        # grad_input = minitorch.zeros(original_shape.shape, backend=grad_output.backend) + 1.0        
+        # # Return a zero tensor for the gradient with respect to dim
+        # grad_dim = minitorch.zeros(dim.shape, backend=grad_output.backend)
         
-        return grad_input, grad_dim
+        # return grad_input, grad_dim
+
+        ### ChatGPT Answer
+        # original_shape, dim = ctx.saved_values
+        # dim_val = int(dim.item())
+
+        # if dim_val == -1:
+        #     # If dim was -1, we summed over all dimensions
+        #     grad_input = grad_output.expand(original_shape)
+        # else:
+        #     # Otherwise, we expand grad_output to match the original shape
+        #     expand_shape = list(original_shape)
+        #     expand_shape[dim_val] = 1
+        #     grad_input = grad_output.expand(expand_shape).expand(original_shape)
+
+        # # Return zero gradient for the dim argument
+        # return grad_input, 0.0
+
+
 
 
 # class Mean(Function):
@@ -196,9 +216,11 @@ class Sigmoid(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         """Compute the sigmoid of a tensor"""
         (a,) = ctx.saved_values
-        sigmoid_a = a.f.sigmoid_map(a)  # Compute the sigmoid of the input
-        sigmoid_derivative = sigmoid_a * (1 - sigmoid_a)  # Compute the derivative
-        return (grad_output * sigmoid_derivative,)  # Return the gradient
+        return grad_output.f.sigmoid_back_zip(a, grad_output)
+        # (a,) = ctx.saved_values
+        # sigmoid_a = a.f.sigmoid_map(a)  # Compute the sigmoid of the input
+        # sigmoid_derivative = sigmoid_a * (1 - sigmoid_a)  # Compute the derivative
+        # return (grad_output * sigmoid_derivative,)  # Return the gradient
 
 class ReLU(Function):
     @staticmethod
@@ -270,13 +292,6 @@ class Permute(Function):
                 reversed_perm[perm[i]] = i
             return reversed_perm
 
-        # (a, order) = ctx.saved_values
-        # print(order)
-        # order_list = [int(order[i]) for i in range(order.size)]
-        # reversed_order = reverse_permutation(order_list)
-        # print(reversed_order)
-        # grad_output._tensor = grad_output._tensor.permute(*reversed_order)
-
         order, = ctx.saved_values
         order_list = [int(order[i]) for i in range(order.size)]
         reversed_order = reverse_permutation(order_list)
@@ -284,8 +299,6 @@ class Permute(Function):
         
         # Return the gradient with respect to the input tensor and 0.0 for the order
         return grad_input, 0.0
-
-        # return grad_output, grad_output
 
 
 class View(Function):
