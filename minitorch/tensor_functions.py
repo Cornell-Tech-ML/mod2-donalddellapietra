@@ -66,10 +66,12 @@ class Function:
 class Neg(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Negate the tensor"""
         return t1.f.neg_map(t1)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Negate the gradient"""
         # print(ctx)
         # print(grad_output)
         return -grad_output
@@ -78,11 +80,13 @@ class Neg(Function):
 class Inv(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor) -> Tensor:
+        """Inverse the tensor"""
         ctx.save_for_backward(t1)
         return t1.f.inv_map(t1)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+        """Inverse the gradient"""
         (t1,) = ctx.saved_values
         return grad_output.f.inv_back_zip(t1, grad_output)
 
@@ -90,10 +94,12 @@ class Inv(Function):
 class Add(Function):
     @staticmethod
     def forward(ctx: Context, t1: Tensor, t2: Tensor) -> Tensor:
+        """Add two tensors"""
         return t1.f.add_zip(t1, t2)
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
+        """Add two gradients"""
         return grad_output, grad_output
 
 
@@ -106,7 +112,8 @@ class All(Function):
         else:
             # print("all with dim -1")
             return a.f.mul_reduce(
-                a.contiguous().view([int(operators.prod(a.shape))]), 0
+                a.contiguous().view([int(operators.prod(a.shape))]),  # type: ignore[arg-type]
+                0,
             )
 
 
@@ -151,10 +158,12 @@ class Mul(Function):
 class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
+        """Sum the tensor along a dimension"""
         return a.f.add_reduce(a, int(dim.item()))
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+        """Sum the gradient along a dimension"""
         return (grad_output, 0.0)
 
 
@@ -167,7 +176,7 @@ class Sigmoid(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
-        """Compute the sigmoid of a tensor"""
+        """Compute the gradient of sigmoid of a tensor"""
         (a,) = ctx.saved_values
         return grad_output.f.sigmoid_back_zip(a, grad_output)
 
@@ -195,11 +204,9 @@ class Log(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
-        """Compute the derivative of logarithm of a tensor"""
+        """Compute the gradient of logarithm of a tensor"""
         (a,) = ctx.saved_values
-        # Compute the gradient of the input using the derivative of log
-        grad_input = grad_output / a
-        return (grad_input,)
+        return grad_output / a
 
 
 class Exp(Function):
@@ -211,7 +218,7 @@ class Exp(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
-        """Compute the derivative of exponential of a tensor"""
+        """Compute the gradient of exponential of a tensor"""
         (a,) = ctx.saved_values
         return grad_output * a.f.exp_map(a)
 
@@ -239,7 +246,7 @@ class Permute(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         """Reverse the permutation of the dimensions of a tensor"""
 
-        def reverse_permutation(perm):
+        def reverse_permutation(perm: List[int]) -> List[int]:  # noqa: ANN001, ANN202
             n = len(perm)
             reversed_perm = [0] * n
             for i in range(n):
@@ -303,7 +310,7 @@ class MatMul(Function):
         t1, t2 = ctx.saved_values
 
         def transpose(a: Tensor) -> Tensor:
-            order = list(range(a.dims))
+            order = list(range(a.dims))  # type: ignore[attr-defined]
             order[-2], order[-1] = order[-1], order[-2]
             return a._new(a._tensor.permute(*order))
 
@@ -418,7 +425,7 @@ def tensor(
 # Gradient check for tensors
 
 
-def grad_central_difference(
+def grad_central_difference(  # noqa: D103
     f: Any, *vals: Tensor, arg: int = 0, epsilon: float = 1e-6, ind: UserIndex
 ) -> float:
     x = vals[arg]

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import random
-from typing import Iterable, Optional, Sequence, Tuple, Union
+from typing import Iterable, Optional, Sequence, Tuple, Union, List
 
 import numba
 import numba.cuda
@@ -21,15 +21,16 @@ class IndexingError(RuntimeError):
     pass
 
 
-Storage: TypeAlias = npt.NDArray[np.float64]
-OutIndex: TypeAlias = npt.NDArray[np.int32]
-Index: TypeAlias = npt.NDArray[np.int32]
-Shape: TypeAlias = npt.NDArray[np.int32]
-Strides: TypeAlias = npt.NDArray[np.int32]
+# sorry, pyright was giving me a hard time with the type aliases
+Storage: TypeAlias = Union[npt.NDArray[np.float64], List[float]]
+OutIndex: TypeAlias = Union[npt.NDArray[np.int32], List[int]]
+Index: TypeAlias = Union[npt.NDArray[np.int32], List[int]]
+Shape: TypeAlias = Union[npt.NDArray[np.int32], List[int]]
+Strides: TypeAlias = Union[npt.NDArray[np.int32], List[int]]
 
 UserIndex: TypeAlias = Sequence[int]
-UserShape: TypeAlias = Sequence[int]
-UserStrides: TypeAlias = Sequence[int]
+UserShape: TypeAlias = Union[npt.NDArray[np.int32], Sequence[int]]
+UserStrides: TypeAlias = Union[npt.NDArray[np.int32], Sequence[int]]
 
 
 def index_to_position(index: Index, strides: Strides) -> int:
@@ -93,7 +94,7 @@ def broadcast_index(
     for i in range(len(shape)):
         big_dim = big_shape[-(i + 1)]
         small_dim = shape[-(i + 1)]
-        
+
         if big_dim == small_dim:
             out_index[-(i + 1)] = big_index[-(i + 1)]
         elif small_dim == 1:
@@ -208,10 +209,10 @@ class TensorData:
         return True
 
     @staticmethod
-    def shape_broadcast(shape_a: UserShape, shape_b: UserShape) -> UserShape:
+    def shape_broadcast(shape_a: UserShape, shape_b: UserShape) -> UserShape:  # noqa: D102
         return shape_broadcast(shape_a, shape_b)
 
-    def index(self, index: Union[int, UserIndex]) -> int:
+    def index(self, index: Union[int, UserIndex]) -> int:  # noqa: D102
         if isinstance(index, int):
             aindex: Index = array([index])
         else:  # if isinstance(index, tuple):
@@ -234,7 +235,7 @@ class TensorData:
         # Call fast indexing.
         return index_to_position(array(index), self._strides)
 
-    def indices(self) -> Iterable[UserIndex]:
+    def indices(self) -> Iterable[UserIndex]:  # noqa: D102
         lshape: Shape = array(self.shape)
         out_index: Index = array(self.shape)
         for i in range(self.size):
@@ -245,11 +246,11 @@ class TensorData:
         """Get a random valid index"""
         return tuple((random.randint(0, s - 1) for s in self.shape))
 
-    def get(self, key: UserIndex) -> float:
+    def get(self, key: UserIndex) -> float:  # noqa: D102
         x: float = self._storage[self.index(key)]
         return x
 
-    def set(self, key: UserIndex, val: float) -> None:
+    def set(self, key: UserIndex, val: float) -> None:  # noqa: D102
         self._storage[self.index(key)] = val
 
     def tuple(self) -> Tuple[Storage, Shape, Strides]:

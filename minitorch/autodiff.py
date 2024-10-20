@@ -38,19 +38,19 @@ variable_count = 1
 
 
 class Variable(Protocol):
-    def accumulate_derivative(self, x: Any) -> None: ...
+    def accumulate_derivative(self, x: Any) -> None: ...  # noqa: D102
 
     @property
-    def unique_id(self) -> int: ...
+    def unique_id(self) -> int: ...  # noqa: D102
 
-    def is_leaf(self) -> bool: ...
+    def is_leaf(self) -> bool: ...  # noqa: D102
 
-    def is_constant(self) -> bool: ...
+    def is_constant(self) -> bool: ...  # noqa: D102
 
     @property
-    def parents(self) -> Iterable["Variable"]: ...
+    def parents(self) -> Iterable["Variable"]: ...  # noqa: D102
 
-    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: ...
+    def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]: ...  # noqa: D102
 
 
 def topological_sort(variable: Variable) -> Iterable[Variable]:
@@ -128,5 +128,5 @@ class Context:
         self.saved_values = values
 
     @property
-    def saved_tensors(self) -> Tuple[Any, ...]:
+    def saved_tensors(self) -> Tuple[Any, ...]:  # noqa: D102
         return self.saved_values

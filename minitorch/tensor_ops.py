@@ -14,7 +14,7 @@ from .tensor_data import (
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides
+    from .tensor_data import OutIndex, Index, Shape, Storage, Strides
 
 
 class MapProto(Protocol):
@@ -37,7 +37,7 @@ class TensorOps:
         ...
 
     @staticmethod
-    def reduce(
+    def reduce(  # noqa: D102
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[[Tensor, int], Tensor]: ...
 
@@ -181,7 +181,7 @@ class SimpleOps(TensorOps):
         return ret
 
     @staticmethod
-    def reduce(
+    def reduce(  # noqa: D417
         fn: Callable[[float, float], float], start: float = 0.0
     ) -> Callable[["Tensor", int], "Tensor"]:
         """Higher-order tensor reduce function. ::
@@ -216,7 +216,7 @@ class SimpleOps(TensorOps):
 
             # Other values when not sum.
             out = a.zeros(tuple(out_shape))
-            out._tensor._storage[:] = start
+            out._tensor._storage[:] = start  # type: ignore[index]
 
             f(*out.tuple(), *a.tuple(), dim)
             return out
@@ -274,10 +274,10 @@ def tensor_map(
 
         for i in range(out_size):
             # Convert flat index i to multidimensional index
-            out_index = [0] * len(out_shape)
+            out_index: OutIndex = [0] * len(out_shape)
             to_index(i, out_shape, out_index)
             # Broadcast the index to the input shape
-            in_index = [0] * len(in_shape)
+            in_index: Index = [0] * len(in_shape)
             broadcast_index(out_index, out_shape, in_shape, in_index)
             # Calculate the position in the input storage
             in_position = index_to_position(in_index, in_strides)
@@ -329,8 +329,6 @@ def tensor_zip(
         b_strides: Strides,
     ) -> None:
         out_shape_2 = shape_broadcast(a_shape, b_shape)
-        # print(out_shape_2)
-        # print(out_shape)
         for i in range(len(out_shape_2)):
             if out_shape_2[i] != out_shape[i]:
                 raise ValueError("Cannot broadcast shapes")

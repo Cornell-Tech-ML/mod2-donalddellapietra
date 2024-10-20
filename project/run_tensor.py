@@ -37,7 +37,7 @@ class Linear(minitorch.Module):
 
         # print(f"inputs shape {inputs.shape}") # 50, 2
         # print(weights_tensor.shape) # 2, 20
-        # print(bias_tensor.shape) # 20 
+        # print(bias_tensor.shape) # 20
 
         num_pts, in_size = inputs.shape
         out_size = self.weights.value.shape[1]
@@ -52,7 +52,7 @@ class Linear(minitorch.Module):
 
         # 50 x 2 x 20
         c = (a * b).sum(1).view(num_pts, out_size)
-        
+
         return c + self.bias.value
 
 
