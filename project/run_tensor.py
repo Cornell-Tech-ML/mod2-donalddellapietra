@@ -30,19 +30,31 @@ class Linear(minitorch.Module):
         super().__init__()
         self.weights = RParam(in_size, out_size)
         self.bias = RParam(out_size)
-        self.out_size = out_size
-
 
     def forward(self, inputs):
-        """weight matrix mult input then add bias, output a tensor"""
+        weights_tensor = self.weights.value
+        bias_tensor = self.bias.value
+
+        # print(f"inputs shape {inputs.shape}") # 50, 2
+        # print(weights_tensor.shape) # 2, 20
+        # print(bias_tensor.shape) # 20 
+
         num_pts, in_size = inputs.shape
-        # first layer weight has shape (in_size, out_size) = (2, hidden_layers)
-        # want to broadcast so that (1, in_size, out_size) and (num_pts, in_size, 1)
-        w = self.weights.value # (1, in_size, out_size)
-        xs = inputs.view(num_pts, in_size, 1)
-        matix_mul = (w*xs).sum(1).view(num_pts, self.out_size)
-        # result is (num_pts, out_size), i.e. one output for each datapoint
-        return matix_mul + self.bias.value # bias shape is (1, out_size)
+        out_size = self.weights.value.shape[1]
+        # 1 x 2 x 3
+        # 4 x 2 x 1
+        # 1 x 2 x 20
+        a = self.weights.value.view(1, in_size, out_size)
+        # 2 x 20
+        a = self.weights.value
+        # 50 x 2 x 1
+        b = inputs.view(num_pts, in_size, 1)
+
+        # 50 x 2 x 20
+        c = (a * b).sum(1).view(num_pts, out_size)
+        
+        return c + self.bias.value
+
 
 
 
@@ -96,7 +108,7 @@ class TensorTrain:
 
 if __name__ == "__main__":
     PTS = 50
-    HIDDEN = 3
-    RATE = 0.5
-    data = minitorch.datasets["Simple"](PTS)
+    HIDDEN = 5
+    RATE = 0.2
+    data = minitorch.datasets["Diag"](PTS)
     TensorTrain(HIDDEN).train(data, RATE)

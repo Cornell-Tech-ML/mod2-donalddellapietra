@@ -6,7 +6,8 @@
 # from minitorch import MathTestVariable, Tensor, grad_check, tensor
 
 import minitorch
-from minitorch import UserShape
+
+
 def test_manual() -> None:
     """Test manual test."""
     # c = minitorch.shape_broadcast((1,), (5, 5))
@@ -19,7 +20,7 @@ def test_manual() -> None:
     # print(b.shape)
     # print(len(a.shape))
     # print(len(b.shape))
-    print((1,)* (len(a.shape) - len(b.shape)) + b.shape)
+    print((1,) * (len(a.shape) - len(b.shape)) + b.shape)
 
     # print(len(a.shape) < len(b.shape))
     # new_shape = (1,) * (len(a.shape) - len(b.shape)) + b.shape
@@ -52,21 +53,20 @@ def test_sum() -> None:
     t = minitorch.tensor([[2, 3], [4, 6], [5, 7]])
     print(t.all(0))
 
+
 def test_neg_backward():
     # a = minitorch.tensor([1.0, -5.0, 3.0], requires_grad=True)
     # a.sum().backward()
     # print(a.grad)
 
     a = minitorch.tensor([1.0, -2.0, 3.0], requires_grad=True)
-    
+
     # Perform the negation operation
 
     b = -a
 
     b.sum().backward()
     print(a.grad)
-
-
 
 
 def test_view() -> None:
@@ -76,6 +76,7 @@ def test_view() -> None:
     print(a.log())
     print(a.shape)
     print(a.view((2, 3)))
+
 
 def test_mean() -> None:
     b = minitorch.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]], requires_grad=True)
@@ -90,9 +91,6 @@ def test_mean() -> None:
     print(mean_value)
 
     # a = mean_value.sum().backward()
-
-    
-
 
 
 def test_permute():
@@ -123,11 +121,14 @@ def test_permute():
 
     # Test permute with gradient
     # Create a tensor with shape 3, 2, 4
-    d = minitorch.tensor([
-        [[1, 2, 3, 4], [5, 6, 7, 8]],
-        [[9, 10, 11, 12], [13, 14, 15, 16]],
-        [[17, 18, 19, 20], [21, 22, 23, 24]]
-    ], requires_grad=True)
+    d = minitorch.tensor(
+        [
+            [[1, 2, 3, 4], [5, 6, 7, 8]],
+            [[9, 10, 11, 12], [13, 14, 15, 16]],
+            [[17, 18, 19, 20], [21, 22, 23, 24]],
+        ],
+        requires_grad=True,
+    )
     print("Original tensor shape:", d.shape)
     # print(d)
     # d = minitorch.tensor([[[1., 2.], [3., 4.]], [[5., 6.], [7., 8.]]], requires_grad=True)
@@ -144,22 +145,26 @@ def test_permute():
     print("\nGradient after permute and sum:")
     print(d.grad)
 
+
 def test_nir():
-    d = minitorch.tensor([
-        [[1, 2, 3, 4], [5, 6, 7, 8]],
-        [[9, 10, 11, 12], [13, 14, 15, 16]],
-        [[17, 18, 19, 20], [21, 22, 23, 24]]
-    ], requires_grad=True)
+    d = minitorch.tensor(
+        [
+            [[1, 2, 3, 4], [5, 6, 7, 8]],
+            [[9, 10, 11, 12], [13, 14, 15, 16]],
+            [[17, 18, 19, 20], [21, 22, 23, 24]],
+        ],
+        requires_grad=True,
+    )
     print(d.shape)
-    print(d.view(((3 * 2 * 4))))
+    print(d.view((3 * 2 * 4)))
     print(d.sum(1).shape)
     print(d.shape)
 
 
 import torch
 
+
 def test_matmul():
-    
     # array_1 = [[[1], [2]],
     #     [[3], [4]],
     #     [[5], [6]],
@@ -170,17 +175,8 @@ def test_matmul():
     #     [4, 5, 6]]
     # ]
 
-
-        
-    array_1 = [[[1], [2]],
-        [[3], [4]],
-        [[5], [6]],
-        [[7], [8]]
-    ]
-    array_2 = [
-        [[1, 2, 3],
-        [4, 5, 6]]
-    ]
+    array_1 = [[[1], [2]], [[3], [4]], [[5], [6]], [[7], [8]]]
+    array_2 = [[[1, 2, 3], [4, 5, 6]]]
 
     # Create a tensor of shape 4 x 2 x 1
     tensor_1 = torch.tensor(array_1)
@@ -197,39 +193,28 @@ def test_matmul():
 
     tensor1 = minitorch.tensor(array_1)
     tensor2 = minitorch.tensor(array_2)
-    
+
     c = (tensor1 * tensor2).sum(1)
     # print(c)
 
-
-    tensor1 = minitorch.tensor([
-    [1, 2],
-    [3, 4],
-    [5, 6],
-    [7, 8]
-    ])
+    tensor1 = minitorch.tensor([[1, 2], [3, 4], [5, 6], [7, 8]])
 
     # Create a 2x3 tensor
-    tensor2 = minitorch.tensor([
-        [1, 2, 3],
-        [4, 5, 6]
-    ])
+    tensor2 = minitorch.tensor([[1, 2, 3], [4, 5, 6]])
 
     print(tensor1.shape)
     print(tensor2.shape)
 
-    a = tensor1.view((tensor1.shape[0], tensor1.shape[1],1))
+    a = tensor1.view((tensor1.shape[0], tensor1.shape[1], 1))
     b = tensor2.view((1, tensor2.shape[0], tensor2.shape[1]))
 
     c = (a * b).sum(1).view((4, 3))
 
     print(c)
 
+
 def test_expand():
-    tensor2 = minitorch.tensor([
-        [1, 2, 3],
-        [4, 5, 6]
-    ])
+    tensor2 = minitorch.tensor([[1, 2, 3], [4, 5, 6]])
     print(tensor2.shape)
     print(tensor2.expand((2, 3, 6)))
 

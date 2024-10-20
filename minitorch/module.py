@@ -2,14 +2,16 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Sequence, Tuple
 
+
 class Module:
     """Modules form a tree that store parameters and other submodules. They make up the basis of neural network stacks.
 
-    Attributes:
+    Attributes
     ----------
     _modules : Storage of the child modules
     _parameters : Storage of the module's parameters
     training : Whether the module is in training mode or evaluation mode
+
     """
 
     _modules: Dict[str, Module]
@@ -41,9 +43,10 @@ class Module:
     def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
         """Collect all the parameters of this module and its descendents.
 
-        Returns:
+        Returns
         -------
         The name and 'Parameter' of each ancestor parameter.
+
         """
         parameters = {}
         for k, v in self._parameters.items():
@@ -65,10 +68,11 @@ class Module:
         ----
         k: Local name of the parameter.
         v: Value for the parameter.
-        
+
         Returns:
         -------
         Newly created parameter.
+
         """
         val = Parameter(v, k)
         self.__dict__["_parameters"][k] = val
@@ -117,6 +121,7 @@ class Module:
             main_str += "\n  " + "\n".join(lines) + "\n"
         main_str += ")"
         return main_str
+
 
 class Parameter:
     """A Parameter is a special container stored in a 'Module'.

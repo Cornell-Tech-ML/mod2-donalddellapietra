@@ -283,17 +283,16 @@ class Tensor:
         """
         return self._tensor.shape
 
-
     def zero_grad_(self) -> None:
         """Zero out the gradient of the tensor"""
         self.grad = None
 
     def __radd__(self, b: TensorLike) -> Tensor:
         return Add.apply(self._ensure_tensor(b), self)
-    
+
     def __rmul__(self, b: TensorLike) -> Tensor:
         return Mul.apply(self._ensure_tensor(b), self)
-    
+
     def __rsub__(self, b: TensorLike) -> Tensor:
         return Add.apply(self._ensure_tensor(b), Neg.apply(self))
 
@@ -305,15 +304,15 @@ class Tensor:
 
     def __sub__(self, b: TensorLike) -> Tensor:
         return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
-    
+
     def __neg__(self) -> Tensor:
         return Neg.apply(self)
-    
+
     def all(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
         if dim is None:
             return All.apply(self, self._ensure_tensor(-1))
         return All.apply(self, self._ensure_tensor(dim))
-    
+
     def add(self, b: TensorLike) -> Tensor:
         return Add.apply(self, self._ensure_tensor(b))
 
@@ -322,10 +321,10 @@ class Tensor:
 
     def mul(self, b: TensorLike) -> Tensor:
         return Mul.apply(self, self._ensure_tensor(b))
-    
+
     def __lt__(self, b: TensorLike) -> Tensor:
         return LT.apply(self, self._ensure_tensor(b))
-    
+
     def __eq__(self, b: TensorLike) -> Tensor:
         return EQ.apply(self, self._ensure_tensor(b))
 
@@ -334,25 +333,28 @@ class Tensor:
 
     def neg(self) -> Tensor:
         return Neg.apply(self)
-    
+
     def log(self) -> Tensor:
         return Log.apply(self)
-    
+
     def exp(self) -> Tensor:
         return Exp.apply(self)
-    
+
     def sigmoid(self) -> Tensor:
         return Sigmoid.apply(self)
-    
+
     def relu(self) -> Tensor:
         return ReLU.apply(self)
-    
+
     def is_close(self, b: TensorLike) -> Tensor:
         return IsClose.apply(self, self._ensure_tensor(b))
-    
+
     def sum(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
         if dim is None:
-            return Sum.apply(self.contiguous().view(int(operators.prod(self.shape))), self._ensure_tensor(0))
+            return Sum.apply(
+                self.contiguous().view(int(operators.prod(self.shape))),
+                self._ensure_tensor(0),
+            )
         else:
             return Sum.apply(self, self._ensure_tensor(dim))
 
@@ -363,8 +365,6 @@ class Tensor:
         #     return Sum.apply(self, self._ensure_tensor(dim))
         # else:
         #     return Sum.apply(self, dim)
-    
-
 
     # def permute(self, dims: UserShape) -> Tensor:
     #     # Convert UserShape to a Tensor
@@ -373,25 +373,24 @@ class Tensor:
 
     def permute(self, *dims: int) -> Tensor:
         # Convert the unpacked dims to a Tensor
-        dims_tensor = Tensor(TensorData([float(dim) for dim in dims], (len(dims),)), backend=self.backend)
+        dims_tensor = Tensor(
+            TensorData([float(dim) for dim in dims], (len(dims),)), backend=self.backend
+        )
         return Permute.apply(self, dims_tensor)
-    
 
-
-    #can also unpack a tuple to do this
+    # can also unpack a tuple to do this
     # def view(self, shape: Union[int, UserShape]) -> Tensor:
     #     # Convert an integer shape to a tuple
     #     if isinstance(shape, int):
     #         shape = (shape,)
-        
+
     #     shape_tensor = Tensor(
     #         TensorData([float(dim) for dim in shape], (len(shape),)),
     #         backend=self.backend
     #     )
     #     return View.apply(self, shape_tensor)
 
-
-        # can also unpack a tuple to do this
+    # can also unpack a tuple to do this
     def view(self, *newdim: int) -> Tensor:
         # if len(shape) == 1 and isinstance(shape[0], (tuple, list)):
         #     shape = shape[0]
@@ -399,17 +398,14 @@ class Tensor:
         # return View.apply(self, shape_tensor)
 
         return View.apply(self, tensor(list(newdim)))
-    
 
     # def view(self, shape: UserShape) -> Tensor:
     #     shape_tensor = Tensor(TensorData([float(dim) for dim in shape], (len(shape),)), backend=self.backend)
     #     return View.apply(self, shape_tensor)
     #     return View.apply(self, self.make(shape, (len(shape),), backend=self.backend))
 
-
     # def mean(self, dim: TensorLike) -> Tensor:
     #     return Sum.apply(self, self._ensure_tensor(dim)) / self.size
-
 
     def mean(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
         if dim is None:
@@ -425,13 +421,10 @@ class Tensor:
             return summed
         else:
             raise ValueError("dim must be an integer or None")
-    
+
     @property
     def size(self) -> int:
         return int(operators.prod(self.shape))
 
     def __hash__(self) -> int:
         return self.unique_id
-        
-    
-

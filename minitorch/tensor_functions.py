@@ -105,7 +105,9 @@ class All(Function):
             return a.f.mul_reduce(a, int(dim.item()))
         else:
             # print("all with dim -1")
-            return a.f.mul_reduce(a.contiguous().view([int(operators.prod(a.shape))]), 0)
+            return a.f.mul_reduce(
+                a.contiguous().view([int(operators.prod(a.shape))]), 0
+            )
 
 
 class EQ(Function):
@@ -118,6 +120,7 @@ class EQ(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         """Return 0"""
         return grad_output * 0, grad_output * 0
+
 
 class LT(Function):
     @staticmethod
@@ -150,11 +153,9 @@ class Sum(Function):
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         return a.f.add_reduce(a, int(dim.item()))
 
-
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         return (grad_output, 0.0)
-
 
 
 class Sigmoid(Function):
@@ -182,7 +183,8 @@ class ReLU(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         """Compute the derivative of ReLU of a tensor"""
         (a,) = ctx.saved_values
-        return grad_output * a.f.relu_back_zip(a, grad_output)
+        return grad_output.f.relu_back_zip(a, grad_output)
+
 
 class Log(Function):
     @staticmethod
@@ -199,6 +201,7 @@ class Log(Function):
         grad_input = grad_output / a
         return (grad_input,)
 
+
 class Exp(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor) -> Tensor:
@@ -212,11 +215,13 @@ class Exp(Function):
         (a,) = ctx.saved_values
         return grad_output * a.f.exp_map(a)
 
+
 class IsClose(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, b: Tensor) -> Tensor:
         """Check if two tensors are close"""
         return a.f.is_close_zip(a, b)
+
 
 class Permute(Function):
     @staticmethod
@@ -230,10 +235,10 @@ class Permute(Function):
         a._tensor = a._tensor.permute(*order_list)
         return a
 
-
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
         """Reverse the permutation of the dimensions of a tensor"""
+
         def reverse_permutation(perm):
             n = len(perm)
             reversed_perm = [0] * n
@@ -241,11 +246,11 @@ class Permute(Function):
                 reversed_perm[perm[i]] = i
             return reversed_perm
 
-        order, = ctx.saved_values
+        (order,) = ctx.saved_values
         order_list = [int(order[i]) for i in range(order.size)]
         reversed_order = reverse_permutation(order_list)
         grad_input = grad_output._new(grad_output._tensor.permute(*reversed_order))
-        
+
         # Return the gradient with respect to the input tensor and 0.0 for the order
         return grad_input, 0.0
 
