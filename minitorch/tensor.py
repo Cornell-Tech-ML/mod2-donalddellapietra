@@ -283,8 +283,6 @@ class Tensor:
         """
         return self._tensor.shape
 
-    # Functions
-    # TODO: Implement for Task 2.3.
 
     def zero_grad_(self) -> None:
         """Zero out the gradient of the tensor"""
@@ -361,16 +359,44 @@ class Tensor:
         else:
             return Sum.apply(self, dim)
     
-    def permute(self, dims: UserShape) -> Tensor:
-        return Permute.apply(self, dims)
+
+
+    # def permute(self, dims: UserShape) -> Tensor:
+    #     # Convert UserShape to a Tensor
+    #     dims_tensor = Tensor(TensorData([float(dim) for dim in dims], (len(dims),)), backend=self.backend)
+    #     return Permute.apply(self, dims_tensor)
+
+    def permute(self, *dims: int) -> Tensor:
+        # Convert the unpacked dims to a Tensor
+        if len(dims) == 0:
+            print("HELLLLLLLLLL")
+        dims_tensor = Tensor(TensorData([float(dim) for dim in dims], (len(dims),)), backend=self.backend)
+        return Permute.apply(self, dims_tensor)
     
     def view(self, shape: UserShape) -> Tensor:
         shape_tensor = Tensor(TensorData([float(dim) for dim in shape], (len(shape),)), backend=self.backend)
         return View.apply(self, shape_tensor)
         # return View.apply(self, self.make(shape, (len(shape),), backend=self.backend))
 
-    def mean(self, dim: TensorLike) -> Tensor:
-        return Sum.apply(self, self._ensure_tensor(dim)) / self.size
+
+    # def mean(self, dim: TensorLike) -> Tensor:
+    #     return Sum.apply(self, self._ensure_tensor(dim)) / self.size
+
+
+    def mean(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        if dim is None:
+            # Compute mean over all elements
+            a = Mul.apply(self, self._ensure_tensor(1.0 / operators.prod(self.shape)))
+            return Sum.apply(a, self._ensure_tensor(-1))
+        elif isinstance(dim, int):
+            # Compute mean along the specified dimension
+            dim_size = self._ensure_tensor(int(self.shape[dim]))
+            inv_dim_size = self._ensure_tensor(1.0) / dim_size
+            a = Mul.apply(self, inv_dim_size)
+            summed = Sum.apply(a, self._ensure_tensor(dim))
+            return summed
+        else:
+            raise ValueError("dim must be an integer or None")
     
     @property
     def size(self) -> int:

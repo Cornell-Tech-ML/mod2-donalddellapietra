@@ -70,7 +70,9 @@ class Neg(Function):
 
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
-        return grad_output.f.neg_map(grad_output)
+        # print(ctx)
+        # print(grad_output)
+        return -grad_output
 
 
 class Inv(Function):
@@ -126,7 +128,7 @@ class LT(Function):
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         """Return 0"""
-        return grad_output * 0.0, grad_output * 0.0
+        return grad_output * 0, grad_output * 0
 
 
 class Mul(Function):
@@ -140,7 +142,7 @@ class Mul(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         """Multiply two tensors"""
         (a, b) = ctx.saved_values
-        return grad_output * b, grad_output * a
+        return (grad_output * b, grad_output * a)
 
 
 class Sum(Function):
@@ -154,7 +156,33 @@ class Sum(Function):
     @staticmethod
     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
         original_shape, dim = ctx.saved_values
-        return grad_output.expand(original_shape), minitorch.zeros(dim.shape, backend=grad_output.backend)
+        
+        grad_input = minitorch.zeros(original_shape.shape, backend=grad_output.backend) + 1.0        
+        # Return a zero tensor for the gradient with respect to dim
+        grad_dim = minitorch.zeros(dim.shape, backend=grad_output.backend)
+        
+        return grad_input, grad_dim
+
+
+# class Mean(Function):
+#     @staticmethod
+#     def forward(ctx: Context, a: Tensor, dim: int) -> Tensor:
+#         ctx.save_for_backward(a, dim)
+#         if dim == -1:
+#             return a.sum() / a.size
+#         else:
+#             return a.sum(dim=dim) / a.shape[dim]
+
+#     @staticmethod
+#     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
+#         a, dim = ctx.saved_values
+#         if dim == -1:
+#             scale = 1.0 / operators.prod(a.shape)
+#             grad_input = grad_output.expand(zeros(a.shape, backend=a.backend)) * scale
+#         else:
+#             scale = 1.0 / a.shape[dim]
+#             grad_input = grad_output.expand(zeros(a.shape, backend=a.backend)) * scale
+#         return grad_input
 
 
 class Sigmoid(Function):
@@ -168,7 +196,9 @@ class Sigmoid(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         """Compute the sigmoid of a tensor"""
         (a,) = ctx.saved_values
-        return grad_output * a.f.sigmoid_back_zip(a)
+        sigmoid_a = a.f.sigmoid_map(a)  # Compute the sigmoid of the input
+        sigmoid_derivative = sigmoid_a * (1 - sigmoid_a)  # Compute the derivative
+        return (grad_output * sigmoid_derivative,)  # Return the gradient
 
 class ReLU(Function):
     @staticmethod
@@ -181,7 +211,7 @@ class ReLU(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         """Compute the derivative of ReLU of a tensor"""
         (a,) = ctx.saved_values
-        return grad_output * a.f.relu_back_zip(a)
+        return grad_output * a.f.relu_back_zip(a, grad_output)
 
 class Log(Function):
     @staticmethod
@@ -194,7 +224,9 @@ class Log(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         """Compute the derivative of logarithm of a tensor"""
         (a,) = ctx.saved_values
-        return grad_output * a.f.log_back_zip(a)
+        # Compute the gradient of the input using the derivative of log
+        grad_input = grad_output / a
+        return (grad_input,)
 
 class Exp(Function):
     @staticmethod
@@ -207,7 +239,7 @@ class Exp(Function):
     def backward(ctx: Context, grad_output: Tensor) -> Tensor:
         """Compute the derivative of exponential of a tensor"""
         (a,) = ctx.saved_values
-        return grad_output * a.f.exp_back_zip(a)
+        return grad_output * a.f.exp_map(a)
 
 class IsClose(Function):
     @staticmethod
@@ -219,12 +251,41 @@ class Permute(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, order: Tensor) -> Tensor:
         """Permute the dimensions of a tensor"""
-        return a.f.permute_map(a, order)
+        ctx.save_for_backward(order)
+        # print(order)
+        order_list = [int(order[i]) for i in range(order.size)]
+        # print(order_list)
+
+        a._tensor = a._tensor.permute(*order_list)
+        return a
+
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
-        """Permute the dimensions of a tensor"""
-        return grad_output, grad_output
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+        """Reverse the permutation of the dimensions of a tensor"""
+        def reverse_permutation(perm):
+            n = len(perm)
+            reversed_perm = [0] * n
+            for i in range(n):
+                reversed_perm[perm[i]] = i
+            return reversed_perm
+
+        # (a, order) = ctx.saved_values
+        # print(order)
+        # order_list = [int(order[i]) for i in range(order.size)]
+        # reversed_order = reverse_permutation(order_list)
+        # print(reversed_order)
+        # grad_output._tensor = grad_output._tensor.permute(*reversed_order)
+
+        order, = ctx.saved_values
+        order_list = [int(order[i]) for i in range(order.size)]
+        reversed_order = reverse_permutation(order_list)
+        grad_input = grad_output._new(grad_output._tensor.permute(*reversed_order))
+        
+        # Return the gradient with respect to the input tensor and 0.0 for the order
+        return grad_input, 0.0
+
+        # return grad_output, grad_output
 
 
 class View(Function):

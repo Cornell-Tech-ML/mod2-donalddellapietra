@@ -320,8 +320,8 @@ def tensor_zip(
     ) -> None:
 
         out_shape_2 = shape_broadcast(a_shape, b_shape)
-        print(out_shape_2)
-        print(out_shape)
+        # print(out_shape_2)
+        # print(out_shape)
         for i in range(len(out_shape_2)):
             if out_shape_2[i] != out_shape[i]:
                 raise ValueError("Cannot broadcast shapes")
