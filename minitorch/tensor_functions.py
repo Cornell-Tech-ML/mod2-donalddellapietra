@@ -155,16 +155,30 @@ class Mul(Function):
         return (grad_output * b, grad_output * a)
 
 
+# class Sum(Function):
+#     @staticmethod
+#     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
+#         """Sum the tensor along a dimension"""
+#         return a.f.add_reduce(a, int(dim.item()))
+
+#     @staticmethod
+#     def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
+#         """Sum the gradient along a dimension"""
+#         return (grad_output, 0.0)
+
+
 class Sum(Function):
     @staticmethod
     def forward(ctx: Context, a: Tensor, dim: Tensor) -> Tensor:
         """Sum the tensor along a dimension"""
+        if dim.item() == -1:
+            return a.f.add_reduce(a.contiguous().view(operators.prod(a.shape)), 0)
         return a.f.add_reduce(a, int(dim.item()))
 
     @staticmethod
-    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, float]:
-        """Sum the gradient along a dimension"""
-        return (grad_output, 0.0)
+    def backward(ctx: Context, grad_output: Tensor) -> Tuple[Tensor, Tensor]:
+        """Gradient of sum is the same as the gradient"""
+        return grad_output, 0.0
 
 
 class Sigmoid(Function):

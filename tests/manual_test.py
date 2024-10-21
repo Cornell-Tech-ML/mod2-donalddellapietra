@@ -218,7 +218,8 @@
 
 
 # if __name__ == "__main__":
-#     test_expand()
+#     # test_expand()
+#     test_sum()
 #     pass
 
 #     # test_matmul()

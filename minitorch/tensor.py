@@ -372,22 +372,22 @@ class Tensor:
 
     def sum(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
         """Sum the tensor along a dimension"""
-        if dim is None:
-            return Sum.apply(
-                self.contiguous().view(int(operators.prod(self.shape))),
-                self._ensure_tensor(0),
-            )
-        else:
-            return Sum.apply(self, self._ensure_tensor(dim))
+        # if dim is None:
+        #     return Sum.apply(
+        #         self.contiguous().view(int(operators.prod(self.shape))),
+        #         self._ensure_tensor(0),
+        #     )
+        # else:
+        #     return Sum.apply(self, self._ensure_tensor(dim))
 
         # alt method
-        # if dim is None:
-        #     # Sum over all dimensions
-        #     return Sum.apply(self, self._ensure_tensor(-1))
-        # elif isinstance(dim, int):
-        #     return Sum.apply(self, self._ensure_tensor(dim))
-        # else:
-        #     return Sum.apply(self, dim)
+        if dim is None:
+            # Sum over all dimensions
+            return Sum.apply(self, self._ensure_tensor(-1))
+        elif isinstance(dim, int):
+            return Sum.apply(self, self._ensure_tensor(dim))
+        else:
+            return Sum.apply(self, dim)
 
     def permute(self, *dims: int) -> Tensor:
         """Permute the dimensions of the tensor"""
@@ -412,6 +412,16 @@ class Tensor:
     # can also unpack a tuple to do this
     def view(self, *shape: int) -> Tensor:
         """Reshape the tensor to the given shape"""
+        # return View.apply(self, tensor(list(shape)))
+        if len(shape) == 1 and isinstance(shape[0], (list, tuple)):
+            shape = shape[0]
+        # If the new shape is empty, we're trying to create a scalar tensor
+        if len(shape) == 0:
+            return View.apply(self, tensor([1]))
+        # Ensure all dimensions are positive
+        shape = tuple(
+            s if s != -1 else self.size // abs(operators.prod(shape)) for s in shape
+        )
         return View.apply(self, tensor(list(shape)))
 
     def mean(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
