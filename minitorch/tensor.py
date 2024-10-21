@@ -95,9 +95,11 @@ class Tensor:
         self.f = backend
 
     def requires_grad_(self, x: bool) -> None:
+        """Set whether the tensor requires gradient"""
         self.history = History()
 
     def requires_grad(self) -> bool:
+        """Check if the tensor requires gradient"""
         return self.history is not None
 
     def to_numpy(self) -> npt.NDArray[np.float64]:
@@ -105,7 +107,7 @@ class Tensor:
         Converted to numpy array
 
         """
-        return self.contiguous()._tensor._storage.reshape(self.shape)
+        return self.contiguous()._tensor._storage.reshape(self.shape)  # type: ignore[attr-defined]
 
     def _ensure_tensor(self, b: TensorLike) -> Tensor:
         """Turns a python number into a tensor with the same backend."""
@@ -194,6 +196,8 @@ class Tensor:
         # END CODE CHANGE (2021)
 
     def zeros(self, shape: Optional[UserShape] = None) -> Tensor:
+        """Create a tensor of zeros with the given shape"""
+
         def zero(shape: UserShape) -> Tensor:
             return Tensor.make(
                 [0.0] * int(operators.prod(shape)), shape, backend=self.backend
@@ -239,14 +243,17 @@ class Tensor:
         return self.history is not None and self.history.last_fn is None
 
     def is_constant(self) -> bool:
+        """True if this variable is a constant (no `history`)"""
         return self.history is None
 
     @property
     def parents(self) -> Iterable[Variable]:
+        """Get the parent variables of this variable"""
         assert self.history is not None
         return self.history.inputs
 
     def chain_rule(self, d_output: Any) -> Iterable[Tuple[Variable, Any]]:
+        """Apply the chain rule to compute the derivative of the parent variables"""
         h = self.history
         assert h is not None
         assert h.last_fn is not None
@@ -260,6 +267,7 @@ class Tensor:
         ]
 
     def backward(self, grad_output: Optional[Tensor] = None) -> None:
+        """Backpropagate the gradient of the output tensor to the input tensors"""
         if grad_output is None:
             assert self.shape == (1,), "Must provide grad_output if non-scalar"
             grad_output = Tensor.make([1.0], (1,), backend=self.backend)
@@ -283,5 +291,159 @@ class Tensor:
         """
         return self._tensor.shape
 
-    # Functions
-    # TODO: Implement for Task 2.3.
+    def zero_grad_(self) -> None:
+        """Zero out the gradient of the tensor"""
+        self.grad = None
+
+    def __radd__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self._ensure_tensor(b), self)
+
+    def __rmul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self._ensure_tensor(b), self)
+
+    def __rsub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self._ensure_tensor(b), Neg.apply(self))
+
+    def __add__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def __mul__(self, b: TensorLike) -> Tensor:
+        return Mul.apply(self, self._ensure_tensor(b))
+
+    def __sub__(self, b: TensorLike) -> Tensor:
+        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+
+    def __neg__(self) -> Tensor:
+        return Neg.apply(self)
+
+    def all(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        """Check if all elements in the tensor are true"""
+        if dim is None:
+            return All.apply(self, self._ensure_tensor(-1))
+        return All.apply(self, self._ensure_tensor(dim))
+
+    def add(self, b: TensorLike) -> Tensor:
+        """Add two tensors"""
+        return Add.apply(self, self._ensure_tensor(b))
+
+    def sub(self, b: TensorLike) -> Tensor:
+        """Subtract two tensors"""
+        return Add.apply(self, Neg.apply(self._ensure_tensor(b)))
+
+    def mul(self, b: TensorLike) -> Tensor:
+        """Multiply two tensors"""
+        return Mul.apply(self, self._ensure_tensor(b))
+
+    def __lt__(self, b: TensorLike) -> Tensor:
+        """Less than comparison between two tensors"""
+        return LT.apply(self, self._ensure_tensor(b))
+
+    def __eq__(self, b: TensorLike) -> Tensor:
+        """Equal comparison between two tensors"""
+        return EQ.apply(self, self._ensure_tensor(b))
+
+    def __gt__(self, b: TensorLike) -> Tensor:
+        """Greater than comparison between two tensors"""
+        return LT.apply(self._ensure_tensor(b), self)
+
+    def neg(self) -> Tensor:
+        """Negate the tensor"""
+        return Neg.apply(self)
+
+    def log(self) -> Tensor:
+        """Compute the logarithm of the tensor"""
+        return Log.apply(self)
+
+    def exp(self) -> Tensor:
+        """Compute the exponential of the tensor"""
+        return Exp.apply(self)
+
+    def sigmoid(self) -> Tensor:
+        """Compute the sigmoid of the tensor"""
+        return Sigmoid.apply(self)
+
+    def relu(self) -> Tensor:
+        """Compute the ReLU of the tensor"""
+        return ReLU.apply(self)
+
+    def is_close(self, b: TensorLike) -> Tensor:
+        """Check if the tensor is close to another tensor"""
+        return IsClose.apply(self, self._ensure_tensor(b))
+
+    def sum(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        """Sum the tensor along a dimension"""
+        if dim is None:
+            return Sum.apply(
+                self.contiguous().view(int(operators.prod(self.shape))),
+                self._ensure_tensor(0),
+            )
+        else:
+            return Sum.apply(self, self._ensure_tensor(dim))
+
+        # # alt method
+        # if dim is None:
+        #     # Sum over all dimensions
+        #     return Sum.apply(self, self._ensure_tensor(-1))
+        # elif isinstance(dim, int):
+        #     return Sum.apply(self, self._ensure_tensor(dim))
+        # else:
+        #     return Sum.apply(self, dim)
+
+    def permute(self, *dims: int) -> Tensor:
+        """Permute the dimensions of the tensor"""
+        # Convert the unpacked dims to a Tensor
+        dims_tensor = Tensor(
+            TensorData([float(dim) for dim in dims], (len(dims),)), backend=self.backend
+        )
+        return Permute.apply(self, dims_tensor)
+
+    # can also unpack a tuple to do this
+    # def view(self, shape: Union[int, UserShape]) -> Tensor:
+    #     # Convert an integer shape to a tuple
+    #     if isinstance(shape, int):
+    #         shape = (shape,)
+
+    #     shape_tensor = Tensor(
+    #         TensorData([float(dim) for dim in shape], (len(shape),)),
+    #         backend=self.backend
+    #     )
+    #     return View.apply(self, shape_tensor)
+
+    # can also unpack a tuple to do this
+    def view(self, *shape: int) -> Tensor:
+        """Reshape the tensor to the given shape"""
+        # return View.apply(self, tensor(list(shape)))
+        if len(shape) == 1 and isinstance(shape[0], (list, tuple)):
+            shape = shape[0]  # type: ignore[assignment]
+        # If the new shape is empty, we're trying to create a scalar tensor
+        if len(shape) == 0:
+            return View.apply(self, tensor([1]))
+        # Ensure all dimensions are positive
+        shape = tuple(  # type: ignore[assignment]
+            s if s != -1 else self.size // abs(operators.prod(shape)) for s in shape
+        )
+        return View.apply(self, tensor(list(shape)))
+
+    def mean(self, dim: Optional[Union[int, Tensor]] = None) -> Tensor:
+        """Compute the mean of the tensor along a dimension"""
+        if dim is None:
+            # Compute mean over all elements
+            a = Mul.apply(self, self._ensure_tensor(1.0 / operators.prod(self.shape)))
+            return Sum.apply(a, self._ensure_tensor(-1))
+        elif isinstance(dim, int):
+            # Compute mean along the specified dimension
+            dim_size = self._ensure_tensor(int(self.shape[dim]))
+            inv_dim_size = self._ensure_tensor(1.0) / dim_size
+            a = Mul.apply(self, inv_dim_size)
+            summed = Sum.apply(a, self._ensure_tensor(dim))
+            return summed
+        else:
+            raise ValueError("dim must be an integer or None")
+
+    @property
+    def size(self) -> int:
+        """Return the size of the tensor"""
+        return int(operators.prod(self.shape))
+
+    def __hash__(self) -> int:
+        return self.unique_id
